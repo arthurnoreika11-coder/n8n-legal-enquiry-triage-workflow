@@ -126,7 +126,7 @@ const enquiryID = 'ENQ-' + String(workflowStaticData.enquiryCounter).padStart(5,
 
 ### Installation
 
-1. Download [`Legal_Enquiry_Triage.json`](./legalEnquiryTriage.json)
+1. Download [`legalEnquiryTriage.json`](./legalEnquiryTriage.json)
 2. In your n8n instance, go to **Workflows → Import from file**
 3. Upload the JSON file
 4. Update the following before activating:
