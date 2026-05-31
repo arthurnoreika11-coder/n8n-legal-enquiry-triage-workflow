@@ -1,0 +1,255 @@
+{
+  "name": "Legal Enquiry Triage",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "fromEmail": "",
+        "toEmail": "={{ $json.email }}",
+        "subject": "Verfiy your email",
+        "message": "=Dear {{ $json.fullName }}, \n\nThank you for your enquiry. Please verify your email to allow us to process your enquiry. Please note this email with expire in 1 hour, after which your enquiry will be automatically deleted.",
+        "approvalOptions": {
+          "values": {
+            "approveLabel": "Verify your email"
+          }
+        },
+        "options": {
+          "limitWaitTime": {
+            "values": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        224,
+        -224
+      ],
+      "id": "a6cc1956-b36e-4429-aa1e-edc805724326",
+      "name": "Email verification",
+      "webhookId": "08ab0a7c-dddc-406e-aafb-f8b1050c08c0"
+    },
+    {
+      "parameters": {
+        "formTitle": "Legal Enquiry Form (UK)",
+        "formDescription": "Please complete this form to send your legal enquiry",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Full Name",
+              "fieldName": "fullName",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email:",
+              "fieldType": "email",
+              "fieldName": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Phone Number:",
+              "fieldName": "phone",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Which country if your enquiry from?",
+              "fieldType": "radio",
+              "fieldName": "jurisdiction",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "England"
+                  },
+                  {
+                    "option": "Wales"
+                  },
+                  {
+                    "option": "Scotland"
+                  },
+                  {
+                    "option": "Northern Ireland"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Details of your issue:",
+              "fieldType": "textarea",
+              "fieldName": "enquiryDetails",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "respondWithOptions": {
+            "values": {
+              "formSubmittedText": "You will receive an email to verify your email. Please follow the steps in the email to ensure that your enquiry is processed. This link will expire in 1 hour. If your email is not verified, your enquiry will be deleted. "
+            }
+          },
+          "ignoreBots": true
+        }
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        0,
+        -224
+      ],
+      "id": "efc0630a-337c-4833-b03b-f17cffbf874e",
+      "name": "Legal Enquiry",
+      "webhookId": "2d794fc3-9b08-4eea-a566-912b13dae4e2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a paralegal at a UK law firm. \nClassify the following enquiry into exactly one area of law.\n\nEnquiry: {{ $('Legal Enquiry').first().json.enquiryDetails }}",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        448,
+        -224
+      ],
+      "id": "c2685796-da8a-432f-bb39-db016c806ad3",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "toEmail": "={{ $json.team }}",
+        "subject": "=New Enquiry - {{ $json.enquiryID }}",
+        "html": "=Name: {{ $json.fullName }} <br>\nEmail: {{ $json.email }} <br>\nPhone Number: {{ $json.phone }} <br>\nJurisdiction: {{ $json.jurisdiction }} <br>\nEnquiry: {{ $json.enquiryDetails }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1024,
+        -320
+      ],
+      "id": "e594d76a-cad2-4178-8ba6-d24c6b3724a8",
+      "name": "Send an Email",
+      "webhookId": "a04ba516-0288-498b-b533-3e1e1996cce4"
+    },
+    {
+      "parameters": {
+        "jsCode": "const workflowStaticData = $getWorkflowStaticData('global');\nconst Enquiry = $(\"Legal Enquiry\").first().json;\nconst areaOfLaw = $input.first().json.output.areaOfLaw;\nlet team = 'ge@email.com';\n\nswitch (areaOfLaw){\n  case 'Corporate & Commercial': team = 'c&c@email.com'; break;\n  case 'Intellectual Property': team = 'ip@email.com'; break;\n  case 'Employment': team = 'employment@email.com'; break;\n  case 'Tax & Banking': team = 't&b@email.com'; break;\n  case 'Family': team = 'family@email.com'; break;\n  case 'Wills & Probate': team = 'w&p@email.com'; break;\n  case 'Property': team = 'property@email.com'; break;\n  case 'Personal Injury': team = 'pi@email.com'; break;\n  case 'Immigration': team = 'immigration@email.com'; break;\n  case 'Civil Disputes': team = 'cd@email.com'; break;\n  case 'Criminal': team = 'criminal@email.com'; break;\n  case 'Human Rights': team = 'hrights@email.com'; break;\n  case 'Environmental': team = 'env@email.com'; break;\n}\n\nif (!workflowStaticData.enquiryCounter){\n  workflowStaticData.enquiryCounter = 0;\n}\nworkflowStaticData.enquiryCounter += 1;\nconst enquiryID = 'ENQ-' + String(workflowStaticData.enquiryCounter).padStart(5,'0');\n\nconst newEnquiry = {\n  ...Enquiry,\n  areaOfLaw : areaOfLaw,\n  team : team,\n  enquiryID : enquiryID\n};\n\nif (!workflowStaticData.enquiry){\n  workflowStaticData.enquiry = [];\n}\n\nworkflowStaticData.enquiry.push(newEnquiry);\n\nreturn [{json : newEnquiry}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        -224
+      ],
+      "id": "e56af23d-c0bc-4f87-9f28-c7ea6afdb7c0",
+      "name": "Process & Store Enquiry"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"areaOfLaw\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"Corporate & Commercial\",\n        \"Intellectual Property\",\n        \"Employment\",\n        \"Tax & Banking\",\n        \"Family\",\n        \"Wills & Probate\",\n        \"Property\",\n        \"Personal Injury\",\n        \"Immigration\",\n        \"Civil Disputes\",\n        \"Criminal\",\n        \"Human Rights\",\n        \"Environmental\"\n      ],\n      \"description\": \"The area of law that best matches the enquiry\"\n    }\n  },\n  \"required\": [\"areaOfLaw\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        520,
+        0
+      ],
+      "id": "e9248198-3848-4b5b-a4e4-154b3f51e9dd",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "toEmail": "={{ $json.email }}",
+        "subject": "={{ $json.enquiryID }} - Thank you for your enquiry",
+        "html": "=Dear {{ $json.fullName }}, <br>\n<br>\nYour enquiry has been received and passed to our team. Your reference number is {{ $json.enquiryID }}.\n<br>\n<br>\nKind Regards,\n<br>\nLaw firm",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1024,
+        -128
+      ],
+      "id": "89e710cd-e18b-459c-a74e-93a2f31cd1fc",
+      "name": "Send an Email1",
+      "webhookId": "e6e3c7fa-26f2-4909-a478-48b1bdd10734"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Email verification": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Legal Enquiry": {
+      "main": [
+        [
+          {
+            "node": "Email verification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Process & Store Enquiry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process & Store Enquiry": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send an Email1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "ab0c566f-031a-4209-a026-09e0748dd689",
+  "meta": {
+    "instanceId": "a3cd90a0881405b8879eb38fbe275f437c690b2abb96fae060e9c78859667ba0"
+  },
+  "id": "ffKRfpb3DLVg0kNd",
+  "tags": []
+}
