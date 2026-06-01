@@ -4,10 +4,9 @@
     {
       "parameters": {
         "operation": "sendAndWait",
-        "fromEmail": "",
         "toEmail": "={{ $json.email }}",
         "subject": "Verfiy your email",
-        "message": "=Dear {{ $json.fullName }}, \n\nThank you for your enquiry. Please verify your email to allow us to process your enquiry. Please note this email with expire in 1 hour, after which your enquiry will be automatically deleted.",
+        "message": "=<h5>Dear {{ $json.fullName.toTitleCase() }}, </h5> \n\n<p>Thank you for your enquiry. Please verify your email to allow us to process your enquiry. Please note this email with expire in 1 hour, after which your enquiry will be automatically deleted.</p.\n<br>\n<h5>\nKind Regards,<br>\nLaw Firm\n</h5>",
         "approvalOptions": {
           "values": {
             "approveLabel": "Verify your email"
@@ -118,23 +117,6 @@
     },
     {
       "parameters": {
-        "toEmail": "={{ $json.team }}",
-        "subject": "=New Enquiry - {{ $json.enquiryID }}",
-        "html": "=Name: {{ $json.fullName }} <br>\nEmail: {{ $json.email }} <br>\nPhone Number: {{ $json.phone }} <br>\nJurisdiction: {{ $json.jurisdiction }} <br>\nEnquiry: {{ $json.enquiryDetails }}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.emailSend",
-      "typeVersion": 2.1,
-      "position": [
-        1024,
-        -320
-      ],
-      "id": "e594d76a-cad2-4178-8ba6-d24c6b3724a8",
-      "name": "Send an Email",
-      "webhookId": "a04ba516-0288-498b-b533-3e1e1996cce4"
-    },
-    {
-      "parameters": {
         "jsCode": "const workflowStaticData = $getWorkflowStaticData('global');\nconst Enquiry = $(\"Legal Enquiry\").first().json;\nconst areaOfLaw = $input.first().json.output.areaOfLaw;\nlet team = 'ge@email.com';\n\nswitch (areaOfLaw){\n  case 'Corporate & Commercial': team = 'c&c@email.com'; break;\n  case 'Intellectual Property': team = 'ip@email.com'; break;\n  case 'Employment': team = 'employment@email.com'; break;\n  case 'Tax & Banking': team = 't&b@email.com'; break;\n  case 'Family': team = 'family@email.com'; break;\n  case 'Wills & Probate': team = 'w&p@email.com'; break;\n  case 'Property': team = 'property@email.com'; break;\n  case 'Personal Injury': team = 'pi@email.com'; break;\n  case 'Immigration': team = 'immigration@email.com'; break;\n  case 'Civil Disputes': team = 'cd@email.com'; break;\n  case 'Criminal': team = 'criminal@email.com'; break;\n  case 'Human Rights': team = 'hrights@email.com'; break;\n  case 'Environmental': team = 'env@email.com'; break;\n}\n\nif (!workflowStaticData.enquiryCounter){\n  workflowStaticData.enquiryCounter = 0;\n}\nworkflowStaticData.enquiryCounter += 1;\nconst enquiryID = 'ENQ-' + String(workflowStaticData.enquiryCounter).padStart(5,'0');\n\nconst newEnquiry = {\n  ...Enquiry,\n  areaOfLaw : areaOfLaw,\n  team : team,\n  enquiryID : enquiryID\n};\n\nif (!workflowStaticData.enquiry){\n  workflowStaticData.enquiry = [];\n}\n\nworkflowStaticData.enquiry.push(newEnquiry);\n\nreturn [{json : newEnquiry}];"
       },
       "type": "n8n-nodes-base.code",
@@ -149,7 +131,7 @@
     {
       "parameters": {
         "schemaType": "manual",
-        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"areaOfLaw\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"Corporate & Commercial\",\n        \"Intellectual Property\",\n        \"Employment\",\n        \"Tax & Banking\",\n        \"Family\",\n        \"Wills & Probate\",\n        \"Property\",\n        \"Personal Injury\",\n        \"Immigration\",\n        \"Civil Disputes\",\n        \"Criminal\",\n        \"Human Rights\",\n        \"Environmental\"\n      ],\n      \"description\": \"The area of law that best matches the enquiry\"\n    }\n  },\n  \"required\": [\"areaOfLaw\"]\n}"
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"areaOfLaw\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"Corporate & Commercial\",\n        \"Intellectual Property\",\n        \"Employment\",\n        \"Tax & Banking\",\n        \"Family\",\n        \"Wills & Probate\",\n        \"Property\",\n        \"Personal Injury\",\n        \"Immigration\",\n        \"Civil Disputes\",\n        \"Criminal\",\n        \"Human Rights\",\n        \"Environmental\",\n        \"General Enquires\"\n      ],\n      \"description\": \"The area of law that best matches the enquiry\"\n    }\n  },\n  \"required\": [\"areaOfLaw\"]\n}"
       },
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
@@ -162,9 +144,26 @@
     },
     {
       "parameters": {
+        "toEmail": "={{ $json.team }}",
+        "subject": "=New Enquiry - {{ $json.enquiryID }}",
+        "html": "=Name: {{ $json.fullName }} <br>\nEmail: {{ $json.email }} <br>\nPhone Number: {{ $json.phone }} <br>\nJurisdiction: {{ $json.jurisdiction }} <br>\nEnquiry: {{ $json.enquiryDetails }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1024,
+        -320
+      ],
+      "id": "e594d76a-cad2-4178-8ba6-d24c6b3724a8",
+      "name": "Staff Email",
+      "webhookId": "a04ba516-0288-498b-b533-3e1e1996cce4"
+    },
+    {
+      "parameters": {
         "toEmail": "={{ $json.email }}",
         "subject": "={{ $json.enquiryID }} - Thank you for your enquiry",
-        "html": "=Dear {{ $json.fullName }}, <br>\n<br>\nYour enquiry has been received and passed to our team. Your reference number is {{ $json.enquiryID }}.\n<br>\n<br>\nKind Regards,\n<br>\nLaw firm",
+        "html": "=<h5>Dear {{ $json.fullName }},</h5> <br>\n<br>\nYour enquiry has been received and passed to our team. Your reference number is <b>{{ $json.enquiryID }}</b>.\n<br>\n<br>\n<h5>\nKind Regards,\n<br>\nLaw firm\n</h5>",
         "options": {}
       },
       "type": "n8n-nodes-base.emailSend",
@@ -174,7 +173,7 @@
         -128
       ],
       "id": "89e710cd-e18b-459c-a74e-93a2f31cd1fc",
-      "name": "Send an Email1",
+      "name": "Enquirer Email",
       "webhookId": "e6e3c7fa-26f2-4909-a478-48b1bdd10734"
     }
   ],
@@ -217,12 +216,12 @@
       "main": [
         [
           {
-            "node": "Send an Email",
+            "node": "Staff Email",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Send an Email1",
+            "node": "Enquirer Email",
             "type": "main",
             "index": 0
           }
@@ -246,7 +245,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "ab0c566f-031a-4209-a026-09e0748dd689",
+  "versionId": "e746b8bf-a5d7-4a36-adea-c764d0937a63",
   "meta": {
     "instanceId": "a3cd90a0881405b8879eb38fbe275f437c690b2abb96fae060e9c78859667ba0"
   },
